@@ -17,5 +17,17 @@ retail_raw <- read_csv(
   )
 )
 glimpse(retail_raw)
-src <- file.choose()
-file.copy(src, "data/retail_sales_raw.csv", overwrite = TRUE)
+
+# 2.3a: wide -> long
+retail_raw_long <- retail_raw |>
+  select(observation_date, RSAFS, RSAFSNA) |>
+----
+  pivot_longer(
+    cols = c(RSAFS, RSAFSNA),
+    names_to = "series_id",
+    values_to = "sales"
+  )
+
+head(retail_raw_long)
+head(retail_raw)
+nrow(retail_raw_long)   # should be 834
