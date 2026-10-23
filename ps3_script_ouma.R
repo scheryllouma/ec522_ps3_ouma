@@ -21,7 +21,7 @@ glimpse(retail_raw)
 # 2.3a: wide -> long
 retail_raw_long <- retail_raw |>
   select(observation_date, RSAFS, RSAFSNA) |>
-----
+  
   pivot_longer(
     cols = c(RSAFS, RSAFSNA),
     names_to = "series_id",
