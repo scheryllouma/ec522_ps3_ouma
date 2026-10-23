@@ -296,3 +296,43 @@ can_gas_fit |> gg_tsresiduals()
 can_gas_fit |>
   augment() |>
   features(.innov, ljung_box, lag = 24)
+# ---- Part 5: Forecast evaluation ----
+
+# 5.1a: expanding-window TS-CV, one-month-ahead forecasts
+gas_cv_fc <- can_gas |>
+  select(Month, Volume) |>
+  stretch_tsibble(.init = 240, .step = 1) |>
+  model(snaive = SNAIVE(Volume),
+        tslm   = TSLM(log(Volume) ~ trend() + season())) |>
+  forecast(h = 1)
+
+gas_cv_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
+
+# dates of first and last evaluated forecasts
+gas_cv_fc |>
+  as_tibble() |>
+  summarize(first = min(Month), last = max(Month))
+
+# 5.2a: Diebold-Mariano test (absolute loss)
+errs <- gas_cv_fc |>
+  as_tibble() |>
+  left_join(as_tibble(can_gas) |> select(Month, actual = Volume),
+            by = "Month") |>
+  mutate(e = actual - .mean) |>
+  select(Month, .model, e) |>
+  pivot_wider(names_from = .model, values_from = e) |>
+  na.omit()
+
+forecast::dm.test(errs$snaive, errs$tslm, h = 1, power = 1)
+
+# 5.3a: rolling window of 240 months
+gas_roll_fc <- can_gas |>
+  select(Month, Volume) |>
+  slide_tsibble(.size = 240, .step = 1) |>
+  model(snaive = SNAIVE(Volume),
+        tslm   = TSLM(log(Volume) ~ trend() + season())) |>
+  forecast(h = 1)
+
+gas_roll_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
