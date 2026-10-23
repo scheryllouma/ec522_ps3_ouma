@@ -128,3 +128,72 @@ retail_ts |>
   theme_minimal()
 # Added scale_y_continuous() with comma labels because the raw axis shows
 # long numbers (e.g. 600000) that are hard to read at a glance.
+
+# ---- Part 3.1: Log transformation ----
+
+# 3.1a: (look at the can_gas plot from 2.7c; answer in a comment below)
+
+# 3.1b: log of Volume, then plot the logged series
+can_gas <- can_gas |>
+  mutate(log_volume = log(Volume))
+
+can_gas |>
+  autoplot(log_volume) +
+  labs(title = "Canadian Gas Production (log scale)",
+       x = NULL, y = "log(Volume)") +
+  theme_minimal()
+
+# 3.1c: same exercise for NSA retail sales
+retail_nsa <- retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  mutate(log_sales = log(sales))
+
+retail_nsa |>
+  autoplot(sales) +
+  labs(title = "NSA Retail Sales (level)", x = NULL, y = "Millions of dollars") +
+  theme_minimal()
+
+retail_nsa |>
+  autoplot(log_sales) +
+  labs(title = "NSA Retail Sales (log)", x = NULL, y = "log(sales)") +
+  theme_minimal()
+
+# ---- Part 3.2: Growth rates ----
+
+# 3.2a: two ways to compute month-over-month growth
+can_gas <- can_gas |>
+  mutate(
+    growth_direct  = 100 * difference(Volume) / lag(Volume),
+    growth_logdiff = 100 * difference(log_volume)
+  )
+
+can_gas |>
+  autoplot(growth_direct) +
+  labs(title = "Canadian Gas: Month-over-Month Growth (direct)",
+       x = NULL, y = "Growth rate (%)") +
+  theme_minimal()
+
+# gap between the two methods
+can_gas <- can_gas |>
+  mutate(growth_gap = abs(growth_direct - growth_logdiff))
+
+can_gas |>
+  autoplot(growth_gap) +
+  labs(title = "Gap: Direct vs. Log-Difference Growth",
+       x = NULL, y = "Absolute gap (percentage points)") +
+  theme_minimal()
+
+# ---- Part 3.3: SA vs. NSA growth rates ----
+retail_ts <- retail_ts |>
+  group_by_key() |>
+  mutate(growth_mom = 100 * difference(log(sales))) |>
+  ungroup()
+
+retail_ts |>
+  autoplot(growth_mom) +
+  labs(
+    title = "Month-over-Month Growth: SA vs. NSA Retail Sales",
+    x = NULL, y = "Growth rate (%)", color = NULL
+  ) +
+  theme_minimal()
+
